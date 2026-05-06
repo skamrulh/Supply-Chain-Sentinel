@@ -1,0 +1,98 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7
+    container_name: sentinel_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis_exporter:
+    image: oliver006/redis_exporter:v1.80.1
+    container_name: sentinel_redis_exporter
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    ports:
+      - "9121:9121"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  sentinel_ingestion:
+    build:
+      context: ./services/ingestion
+    container_name: sentinel_ingestion
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  ml_engine:
+    build:
+      context: ./ml_engine
+    container_name: sentinel_ml_engine
+    ports:
+      - "5000:5000"
+      - "8001:8001"    # Prometheus metrics
+    volumes:
+      - ./ml_engine/models:/app/models
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 120s   # allow time for auto-training on first run
+      retries: 12
+
+  sentinel_api_gateway:
+    build:
+      context: ./services/api_gateway
+    container_name: sentinel_api_gateway
+    ports:
+      - "8001:8000"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ML_ENGINE_URL: http://ml_engine:5000
+    depends_on:
+      ml_engine:
+        condition: service_healthy   # wait for ML engine to be ready
+
+  prometheus:
+    image: prom/prometheus
+    container_name: sentinel_prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - redis_exporter
+
+  grafana:
+    image: grafana/grafana
+    container_name: sentinel_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      # Mount provisioning so datasource and dashboards load automatically
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana   # persist Grafana state across restarts
+    depends_on:
+      - prometheus
+
+volumes:
+  grafana-data:

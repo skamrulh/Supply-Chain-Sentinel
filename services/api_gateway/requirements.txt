@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+redis[asyncio]
+websockets           # required by FastAPI WebSocket support
+httpx                # used for proxying requests to ML Engine
+pydantic

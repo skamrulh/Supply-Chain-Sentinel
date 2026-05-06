@@ -1,0 +1,107 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total Predictions",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "sentinel_predictions_total",
+          "legendFormat": "Predictions"
+        }
+      ],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 2,
+      "title": "Total Anomalies Detected",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "targets": [
+        {
+          "expr": "sentinel_anomalies_total",
+          "legendFormat": "Anomalies"
+        }
+      ],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "thresholds": {"steps": [{"color": "green", "value": 0}, {"color": "red", "value": 1}]}},
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 3,
+      "title": "Anomaly Detection Threshold",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "sentinel_model_threshold",
+          "legendFormat": "Threshold"
+        }
+      ],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}},
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 4,
+      "title": "Reconstruction Error Over Time",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 4},
+      "targets": [
+        {
+          "expr": "rate(sentinel_reconstruction_error_sum[1m]) / rate(sentinel_reconstruction_error_count[1m])",
+          "legendFormat": "Avg Reconstruction Error (1m)"
+        },
+        {
+          "expr": "sentinel_model_threshold",
+          "legendFormat": "Threshold"
+        }
+      ],
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 5,
+      "title": "Redis Stream Length",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "targets": [
+        {
+          "expr": "redis_stream_length{stream=\"supply_chain_stream\"}",
+          "legendFormat": "supply_chain_stream"
+        }
+      ],
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 6,
+      "title": "Anomaly Rate (per minute)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "targets": [
+        {
+          "expr": "rate(sentinel_anomalies_total[1m])",
+          "legendFormat": "Anomaly rate/min"
+        }
+      ],
+      "datasource": "Prometheus"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["supply-chain", "sentinel"],
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "Supply Chain Sentinel Overview",
+  "uid": "supply-chain-sentinel",
+  "version": 1
+}

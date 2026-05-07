@@ -41,7 +41,8 @@ logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
 # ── Paths / Device ────────────────────────────────────────────────────────────
-MODEL_DIR   = Path(os.getenv("MODEL_DIR", "/app/models"))
+
+MODEL_DIR = Path(os.environ.get("MODEL_DIR", Path(__file__).parent / "models"))
 MODEL_DIR.mkdir(exist_ok=True, parents=True)
 
 MODEL_PATH  = MODEL_DIR / "lstm_autoencoder.pth"
